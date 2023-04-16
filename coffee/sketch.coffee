@@ -31,6 +31,7 @@ setActive = =>
 	else
 		for button in operatorButtons
 			button.active = false
+	undoButton.active = history.length > 0
 
 class Button
 	constructor : (@text,@x,@y,@active) ->
@@ -82,7 +83,7 @@ class OperatorButton extends Button
 				marked[0].text = ""
 				marked[1].text = c
 				marked.shift()
-				undoButton.active = history.length > 0
+				setActive()
 
 window.setup = =>
 	createCanvas 600,300
