@@ -10,3 +10,4 @@ https://www.youtube.com/watch?v=WslHCziT4xM
 * Operator buttons are disabled/enabled
 * The history is shown
 * Operands are reversed if needed for - and /
+* Top two elements of stack are shown in green, the rest in yellow

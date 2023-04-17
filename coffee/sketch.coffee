@@ -3,30 +3,31 @@ import _ from 'https://cdn.skypack.dev/lodash'
 
 SIZE = 50
 
-numbers = [24,8,10,20,5,15]
-target = 497
+numbers = [5,6,9,11,15,20]
+target = 318
+stack = [] # NumberButtons
 
-operators = "+ - * /".split ' '
+operators = "+-*/"
 numberButtons = []
 operatorButtons = []
 undoButton = null
 buttons = []
 history = []
-
-marked = []
+count = 0 # antal element på stacken pushats sedan föregående operation
 
 start = new Date()
 
-getMarked = () =>
-	[a,b] = [marked[0].text,marked[1].text]
+getTop2 = () =>
+	n = stack.length
+	[a,b] = [stack[n-1].text,stack[n-2].text]
 	if a < b then [b,a] else [a,b]
 
 setActive = =>
-	if marked.length == 2
+	if stack.length >= 2
 		operatorButtons[0].active = true
 		operatorButtons[1].active = true
 		operatorButtons[2].active = true
-		[a,b] = getMarked()
+		[a,b] = getTop2()
 		operatorButtons[3].active = a%%b==0
 	else
 		for button in operatorButtons
@@ -36,9 +37,12 @@ setActive = =>
 class Button
 	constructor : (@text,@x,@y,@active) ->
 	draw : =>
+		n = stack.length
 		if @text == "" then return
 		push()
-		fill if @ in marked then 'green' else 'white'
+		fill 'white'
+		if @ in stack then fill 'yellow' 
+		if @ in stack.slice n-2,n then fill 'green' 
 		circle @x,@y,SIZE
 		fill if @active then 'black' else 'lightgray'
 		textSize [40,30,30,25,20,15,12,10,8,6,5,4,3,2][str(@text).length]
@@ -48,30 +52,28 @@ class Button
 		dx = mx-@x
 		dy = my-@y
 		dx*dx + dy*dy < SIZE/2 * SIZE/2
-	mark : =>
-		marked.push @
-		if marked.length > 2 then marked.shift()
 
 class UndoButton extends Button
 	click : =>
 		if history.length == 0 then return
-		[c,a,text,b,texter] = history.pop()
+		[c,a,text,b,texter,count] = history.pop()
 		for text,i in texter
 			numberButtons[i].text = text
-		marked = []
+		for i in _.range count
+			stack.pop()
 		setActive()
-		@active = history.length > 0
-		return
 
 class NumberButton extends Button
 	click : =>
-		@mark()
+		count += 1
+		stack.push @
 		setActive()
 
 class OperatorButton extends Button
 	click : =>
-		if marked.length == 2
-			[a,b] = getMarked()
+		n = stack.length
+		if n >= 2
+			[a,b] = getTop2()
 			c = 0
 			if @text == '+' then c =a+b
 			if @text == '-' then c =a-b
@@ -79,14 +81,17 @@ class OperatorButton extends Button
 			if @text == '/' and a%%b==0 then c =a//b
 			if c > 0
 				texter = _.map numberButtons, (b) => b.text
-				history.push [c,a,@text,b,texter]
-				marked[0].text = ""
-				marked[1].text = c
-				marked.shift()
+				history.push [c,a,@text,b,texter,count]
+				stack[n-1].text = c
+				stack[n-2].text = ""
+				x = stack.pop()
+				y = stack.pop()
+				stack.push x
+				count = 0
 				setActive()
 
 window.setup = =>
-	createCanvas 600,300
+	createCanvas 800,300
 	noLoop()
 	textAlign CENTER,CENTER
 	textSize 30
@@ -105,7 +110,6 @@ window.setup = =>
 	undoButton = new UndoButton 'undo',x,y,false
 
 	buttons = [numberButtons..., operatorButtons..., undoButton]
-	console.log buttons
 
 window.mousePressed = =>
 	for button in buttons
@@ -122,6 +126,14 @@ window.draw = =>
 	text target,175,45
 	pop()
 	drawHistory()
+	drawStack()
+
+drawStack = () =>
+	push()
+	textSize 30
+	for item,i in stack
+		text item.text, 650, 40 + i*40
+	pop()
 
 drawHistory = =>
 	push()
